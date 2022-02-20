@@ -8,26 +8,28 @@
 
 namespace fs=std::filesystem;
 
+using ByteSpan = std::span<std::byte>;
+
 
 namespace pngUtility
 {
+
 std::vector<std::byte> readFileBytes(fs::path  const &filename);
+
+uint32_t               crc32(ByteSpan  bytes);
+
+
 }
 
 
 namespace png
 {
 
-using ByteSpan = std::span<std::byte>;
 
 struct Chunk
 {
     std::string_view        name;
     ByteSpan                data;
-
-    ByteSpan                crc32data;
-    uint32_t                crc32;    
-
 };
 
 std::vector<Chunk> chunks(ByteSpan bytes);

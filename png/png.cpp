@@ -8,6 +8,9 @@
 
 #include "include/thrower.h"
 
+
+using namespace std::literals;
+
 namespace pngUtility
 {
 
@@ -106,11 +109,22 @@ Chunk consumeChunk(ByteSpan &bytes)
 
     chunk.name      = std::string_view{reinterpret_cast<char const*>(bytes.data()),4};
     chunk.data      = bytes.subspan(4, size);
-    chunk.crc32data = bytes.subspan(0, 4+size);
 
-    bytes=bytes.subspan(chunk.crc32data.size());
 
-    chunk.crc32 = consumeUint32(bytes);
+
+    auto crc32data = bytes.subspan(0, 4+size);
+
+    bytes=bytes.subspan(crc32data.size());
+
+    auto const expectedCrc32     = consumeUint32(bytes);
+    auto const actualCrc32       = pngUtility::crc32(crc32data);
+
+
+    if(expectedCrc32 != actualCrc32)
+    {
+        throw_runtime_error(std::format("Chunk checksum doesn't match {:08x}!={:08x}",actualCrc32, expectedCrc32));
+    }
+
 
 
     return chunk;
@@ -129,6 +143,22 @@ std::vector<Chunk> chunks(std::span<std::byte>  bytes)
     {
         chunks.push_back( consumeChunk(bytes));
     }
+
+    if(chunks.size() < 2)
+    {
+        throw_runtime_error(std::format("Expected at least 2 chunks : only found {}\n",chunks.size()));
+    }
+
+    if(chunks.front().name != "IHDR"sv)
+    {
+        throw_runtime_error(std::format("First chunk should be IHDR but is {}\n",chunks.front().name));
+    }
+
+    if(chunks.back().name != "IEND"sv)
+    {
+        throw_runtime_error(std::format("Last chunk should be IEND but is {}\n",chunks.back().name));
+    }
+
 
 
     return chunks;

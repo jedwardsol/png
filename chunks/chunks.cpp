@@ -25,6 +25,8 @@ try
     auto bytes  = pngUtility::readFileBytes(args[0]);
     auto chunks = png::chunks(bytes);
 
+
+
     for(auto const &chunk : chunks)
     {
         print("Chunk {} : {:8} bytes\n", chunk.name, chunk.data.size());
