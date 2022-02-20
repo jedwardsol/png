@@ -1,10 +1,12 @@
 #include "png.h"
 
+#include <cassert>
 #include <cstdint>
 #include <fstream>
 #include <vector>
 #include <format>
 #include <array>
+
 
 #include "include/thrower.h"
 
@@ -53,7 +55,7 @@ namespace png
 
 namespace 
 {
-void consumeHeader(ByteSpan &bytes)
+void consumeFileHeader(ByteSpan &bytes)
 {
     static constexpr std::array<uint8_t,8> header
     {{
@@ -90,6 +92,16 @@ uint32_t    consumeUint32(ByteSpan &bytes)
     return value;
 }
 
+uint8_t    consumeUint8(ByteSpan &bytes)
+{
+    auto value = static_cast<uint8_t>(bytes.front());
+
+    bytes = bytes.subspan(1);
+    return value;
+}
+
+
+
 Chunk consumeChunk(ByteSpan &bytes)
 {
     if(bytes.size() < 3 * sizeof(uint32_t))
@@ -125,8 +137,6 @@ Chunk consumeChunk(ByteSpan &bytes)
         throw_runtime_error(std::format("Chunk checksum doesn't match {:08x}!={:08x}",actualCrc32, expectedCrc32));
     }
 
-
-
     return chunk;
 }
 
@@ -135,7 +145,7 @@ Chunk consumeChunk(ByteSpan &bytes)
 
 std::vector<Chunk> chunks(std::span<std::byte>  bytes)
 {
-    consumeHeader(bytes);
+    consumeFileHeader(bytes);
 
     std::vector<Chunk>  chunks;
 
@@ -159,11 +169,37 @@ std::vector<Chunk> chunks(std::span<std::byte>  bytes)
         throw_runtime_error(std::format("Last chunk should be IEND but is {}\n",chunks.back().name));
     }
 
-
-
     return chunks;
 }
 
+
+Header      header(Chunk                const &chunk)
+{
+    assert(chunk.name        == "IHDR"sv);
+
+    if(chunk.data.size() != 13)
+    {
+        throw_runtime_error("IHDR chunk isn't 13 bytes");
+    }
+
+    auto data = chunk.data;
+
+    Header header
+    {
+        static_cast<int>(consumeUint32(data)),
+        static_cast<int>(consumeUint32(data)),
+        static_cast<int>(consumeUint8(data)),
+
+        static_cast<ColourType >(consumeUint8(data)),
+        static_cast<Compression>(consumeUint8(data)),
+        static_cast<Filter     >(consumeUint8(data)),
+        static_cast<Interlacing>(consumeUint8(data)),
+
+    };
+
+
+    return header;
+}
 
 
 }

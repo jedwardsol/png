@@ -32,7 +32,54 @@ struct Chunk
     ByteSpan                data;
 };
 
+
+
+enum class ColourType
+{
+    greyscale       = 0,
+    rgb             = 2,
+    palette         = 3,
+    greyscaleAlpha  = 4,
+    rgbAlpha        = 6,
+};
+
+
+enum class Compression
+{
+    deflate,
+};
+
+enum class Filter
+{
+    adaptive,
+};
+
+enum class Interlacing
+{
+    none,
+    Adam7
+};
+
+
+
+
+struct Header
+{
+    int                     width;
+    int                     height;
+    int                     bitDepth;
+    ColourType              colourType;
+    Compression             compression;
+    Filter                  filter;
+    Interlacing             interlacing;
+};
+
+
 std::vector<Chunk> chunks(ByteSpan bytes);
+
+
+Header      header(Chunk                const &chunk);
+Header      header(std::vector<Chunk>   const &chunks);
 
 
 }

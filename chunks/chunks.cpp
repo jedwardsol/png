@@ -28,6 +28,19 @@ try
     for(auto const &chunk : chunks)
     {
         print("Chunk {} : {:8} bytes\n", chunk.name, chunk.data.size());
+
+        if(chunk.name == "IHDR"sv)
+        {
+            auto header = png::header(chunk);
+        
+            print("    width       {} \n", header.width);
+            print("    height      {} \n", header.height);
+            print("    bitDepth    {} \n", header.bitDepth);
+            print("    colourType  {} \n", static_cast<int>(header.colourType));
+            print("    compression {} \n", static_cast<int>(header.compression));
+            print("    filter      {} \n", static_cast<int>(header.filter));
+            print("    interlacing {} \n", static_cast<int>(header.interlacing));
+        }
     }
 
     return 0;
